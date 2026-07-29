@@ -33,20 +33,43 @@ const otraPersona = {
 
 // contador.iniciar();
 
-function Persona(nombre) {
-  this.nombre = nombre;
+// function Persona(nombre) {
+//   this.nombre = nombre;
+// }
+
+// // Persona.prototype.saludar = function () {
+// //   console.log("Hola, soy " + this.nombre);
+// // };
+
+// const luis = new Persona("Luis");
+// const nomi = new Persona("Nomi");
+
+// console.log(Persona.saludar)
+// console.log(luis.hasOwnProperty('saludar'))
+// console.log(luis.__proto__ === Persona.prototype)
+
+// luis.saludar();
+// nomi.saludar();
+
+function Animal(nombre) {
+    this.nombre = nombre;
 }
 
-// Persona.prototype.saludar = function () {
-//   console.log("Hola, soy " + this.nombre);
-// };
+Animal.prototype.moverse = function() {
+    console.log(this.nombre + " se esta moviendo.");
+}
 
-const luis = new Persona("Luis");
-const nomi = new Persona("Nomi");
+function Perro(nombre) {
+    this.nombre = nombre;
+}
 
-console.log(Persona.saludar)
-console.log(luis.hasOwnProperty('saludar'))
-console.log(luis.__proto__ === Persona.prototype)
+Perro.prototype = Object.create(Animal.prototype);
 
-luis.saludar();
-nomi.saludar();
+Perro.prototype.ladrar = function () {
+    console.log(this.nombre + " dice: guau");
+}
+
+const rex = new Perro("Rex");
+
+rex.ladrar();
+rex.moverse();
