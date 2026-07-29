@@ -43,3 +43,19 @@ function deepClone(objeto) {
 
     return copia;
 }
+
+// Memoize
+function memoize(fn) {
+  const cache = new Map();
+
+  return function(arg) {
+    if ( cache.has(arg)) {
+      return cache.get(arg);
+    } else {
+      const resultado = fn(arg);
+      cache.set(arg, resultado); 
+      return resultado;
+    }
+  }
+}
+
