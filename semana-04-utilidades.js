@@ -3,10 +3,7 @@
 
 // Debounce: sirve para envolvar una funcion para que solo se ejecute
 // despues de que haya pasado cierto tiempo sin que la vuelvan
-// a llamar. Si se vuelve a llamar antes de que pase ese tiempo,
-// el temporizador se reinicia.
-
-// SetTimeout con argumentos al final - integrated function
+// a llamar.
 function debounce( fn, delay) {
   let timeoutId;
 
@@ -15,18 +12,6 @@ function debounce( fn, delay) {
     timeoutId = setTimeout(fn, delay, ...args);
   }
 }
-
-function buscarEnAPI(texto) {
-  console.log('Buscando: ', texto);
-}
-
-const buscarConDebounce = debounce(buscarEnAPI, 300);
-
-console.log('--- Lamando 3 veces seguidas ---');
-buscarConDebounce('j');
-buscarConDebounce('ja');
-buscarConDebounce('jav');
-console.log('--- Fin de las llamadas sincronas ---');
 
 // THROTTLE: Garantiza que una funcion se ejecute como maximo una vez cada X milisegundos
 function throttle(fn, delay) {
@@ -42,14 +27,19 @@ function throttle(fn, delay) {
   }
 }
 
-function actualizarScroll(posicion) {
-  console.log('Posicion actualizada: ', posicion);
+// deepClone: clona multiples niveles de un objeto
+function deepClone(objeto) { 
+    const copia = {};
+
+    for (const clave in objeto) {
+        const valor = objeto[clave];
+
+        if (typeof valor === "object" && valor !== null) {
+            copia[clave] = deepClone(objeto[clave]);
+        } else {
+            copia[clave] = valor;
+        }
+    }
+
+    return copia;
 }
-
-const conThrottle = throttle(actualizarScroll, 200);
-
-conThrottle(1);
-conThrottle(2);
-setTimeout( () => {
-  conThrottle(3)
-}, 300)
