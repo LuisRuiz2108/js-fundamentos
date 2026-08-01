@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Semana 7 — Memory Leak Demo</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 20px; line-height: 1.6; }
+  button { padding: 10px 16px; margin: 6px 6px 6px 0; cursor: pointer; font-size: 14px; }
+  #contenedor { border: 2px dashed #ccc; padding: 20px; margin-top: 20px; min-height: 60px; }
+  .log { background: #f4f4f4; padding: 10px; margin-top: 20px; font-family: monospace; font-size: 13px; white-space: pre-wrap; }
+  h2 { margin-top: 32px; }
+</style>
+</head>
+<body>
+
+<h1>Demo: Memory Leak con Closures + Event Listeners</h1>
+
+<p>Instrucciones completas abajo. Este botón crea un elemento con un listener que
+captura un arreglo grande (~8MB) por closure.</p>
+
+<button id="crear">1. Crear botón con leak</button>
+<button id="remover-mal">2a. Remover MAL (sin limpiar listener) — causa leak</button>
+<button id="remover-bien">2b. Remover BIEN (con removeEventListener) — sin leak</button>
+
+<div id="contenedor"></div>
+
+<div class="log" id="log">Log de eventos aparecerá aquí...</div>
+
+<h2>Cómo usarlo con Chrome DevTools</h2>
+<ol>
+  <li>Abre este archivo en Chrome.</li>
+  <li>Abre DevTools (F12) → pestaña <strong>Memory</strong>.</li>
+  <li>Click en "1. Crear botón con leak" varias veces (5-6 veces) para generar varias instancias.</li>
+  <li>Toma un <strong>Heap Snapshot</strong> (botón de cámara en el panel Memory). Anota el tamaño total.</li>
+  <li>Click en "2a. Remover MAL" varias veces (una por cada botón creado).</li>
+  <li>Fuerza el Garbage Collector: hay un ícono de basura 🗑️ en el panel Memory, click ahí.</li>
+  <li>Toma OTRO Heap Snapshot. Compara el tamaño — deberías ver que la memoria NO bajó proporcionalmente, porque los closures con datosGigantes siguen vivos.</li>
+  <li>Repite todo el proceso pero usando "2b. Remover BIEN" — esta vez sí deberías ver la memoria liberarse después de forzar el GC.</li>
+  <li>Bonus: en el segundo snapshot (el del leak), usa el filtro de búsqueda del heap snapshot y busca "Detached" — Chrome literalmente etiqueta los nodos DOM "detached" (removidos del árbol pero aún en memoria) para que los encuentres fácil.</li>
+</ol>
+
+<script>
+  const log = document.getElementById('log');
+  const contenedor = document.getElementById('contenedor');
+  let contador = 0;
+
+  // Guardamos referencias para poder remover "bien" despues
+  const registrosListeners = new Map();
+
+  function escribirLog(msg) {
+    log.textContent += '\n' + msg;
+    log.scrollTop = log.scrollHeight;
+  }
+
+  document.getElementById('crear').addEventListener('click', function () {
+    contador++;
+    const id = 'boton-leak-' + contador;
+
+    // Este arreglo grande queda "atrapado" en el closure de abajo
+    const datosGigantes = new Array(1_000_000).fill('dato-' + contador);
+
+    const boton = document.createElement('button');
+    boton.textContent = 'Botón generado #' + contador;
+    boton.id = id;
+
+    const handler = function () {
+      // Este closure captura datosGigantes por completo
+      console.log('Click en', id, '- datos disponibles:', datosGigantes.length);
+    };
+
+    boton.addEventListener('click', handler);
+    contenedor.appendChild(boton);
+
+    // Guardamos la referencia al handler para poder limpiarlo "bien" despues
+    registrosListeners.set(id, { boton, handler });
+
+    escribirLog('Creado ' + id + ' con ' + datosGigantes.length + ' elementos capturados por closure');
+  });
+
+  document.getElementById('remover-mal').addEventListener('click', function () {
+    const botones = contenedor.querySelectorAll('button');
+    if (botones.length === 0) {
+      escribirLog('No hay botones que remover');
+      return;
+    }
+    const ultimo = botones[botones.length - 1];
+    // Removemos del DOM SIN quitar el listener primero -> leak
+    contenedor.removeChild(ultimo);
+    escribirLog('Removido ' + ultimo.id + ' SIN limpiar su listener (leak generado)');
+  });
+
+  document.getElementById('remover-bien').addEventListener('click', function () {
+    const botones = contenedor.querySelectorAll('button');
+    if (botones.length === 0) {
+      escribirLog('No hay botones que remover');
+      return;
+    }
+    const ultimo = botones[botones.length - 1];
+    const registro = registrosListeners.get(ultimo.id);
+
+    if (registro) {
+      // Removemos el listener PRIMERO, luego el elemento del DOM
+      registro.boton.removeEventListener('click', registro.handler);
+      registrosListeners.delete(ultimo.id);
+    }
+    contenedor.removeChild(ultimo);
+    escribirLog('Removido ' + ultimo.id + ' CON removeEventListener antes (sin leak)');
+  });
+</script>
+
+</body>
+</html>
